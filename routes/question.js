@@ -4,11 +4,11 @@ var question_service = require('../services/question');
 var user_service = require('../services/users')
 
 router.get('/recent', function(req, res, next){
-    getRecentQuestions(req.params.start,res);
+    getRecentQuestions(req.query.start,res);
 });
 
 router.get('/hot', function(req, res, next){
-    getHotQuestions(req.params.start,res);
+    getHotQuestions(req.query.start,res);
 });
 
 // router.get('/new_answered', function(req, res, next){
@@ -16,16 +16,16 @@ router.get('/hot', function(req, res, next){
 // });
 
 router.get('/user', function(req, res, next){
-    getQuestionByUser(req.params.uid,req.params.start,res);
+    getQuestionsByUser(req.query.user_id,req.query.start,res);
 });
 
 router.get('/user_favorite', function(req, res, next){
-    getQuestionByUserFav(req.params.uid,req.params.start,res);
+    getQuestionsByUserFav(req.query.user_id,req.query.start,res);
 });
 
 router.post('/',function(req,res,next){
     res.writeHead(200, 'Content-Type', 'application/json');
-    var authorId = req.body.authorId;
+    var authorId = req.body.author_id;
     let user = user_service.getUser(authorId);
     if(user == null){
         res.end(JSON.stringify({
@@ -37,7 +37,7 @@ router.post('/',function(req,res,next){
     let question = {
         title: req.body.title,
         description: req.body.description,
-        authorId: req.body.authorId,
+        authorId: authorId,
         authorName: user.name,
         authorIcon: user.iconUrl,
         favoriteCount: 0,
@@ -45,7 +45,7 @@ router.post('/',function(req,res,next){
     };
     try{
         question_service.addQuestion(question);
-        console.log('auth for %o success: ',  question);
+        console.log('add question %o success: ',  question);
         res.end(JSON.stringify({
             success: true
         }));
@@ -68,11 +68,12 @@ router.delete('/:id',function(req,res,next){
 });
 
 router.get('/search',function(req,res,next){
-    getSearchQuestion(req.query.q,req.query.start,res);
+    getSearchQuestions(req.query.q,req.query.start,res);
 })
 
 router.post('/favorite',function(req,res,next){
     try{
+        res.writeHead(200, 'Content-Type', 'application/json');
         question_service.FavQuestion(req.body.uid,req.body.question_id);
         res.end(JSON.stringify({
             success: true
@@ -84,6 +85,7 @@ router.post('/favorite',function(req,res,next){
 
 router.post('/unfavorite',function(req,res,next){
     try{
+        res.writeHead(200, 'Content-Type', 'application/json');
         question_service.unFavQuestion(req.body.uid,req.body.question_id);
         res.end(JSON.stringify({
             success: true
@@ -93,18 +95,19 @@ router.post('/unfavorite',function(req,res,next){
     }
 })
 
-async function getRecentQuestions(date, res) {
+async function getRecentQuestions(start, res) {
     try{
-        let questions = await question_service.getQuestionRecent(date);    
+        let questions = await question_service.getQuestionRecent(start);   
+        console.log("start: "+ start); 
         appendRes(questions,res);    
     }catch(e){
         appendError(e,res)
     }
 };
 
-async function getHotQuestions(favoriteCount,res){
+async function getHotQuestions(start,res){
     try{
-        let questions = await question_service.getQuestionHot(favoriteCount);
+        let questions = await question_service.getQuestionHot(start);
         appendRes(questions,res); 
     }catch(e){
         appendError(e,res)
@@ -129,28 +132,28 @@ async function getHotQuestions(favoriteCount,res){
 //     }
 // }
 
-async function getQuestionByUser(uid,date,res){
+async function getQuestionsByUser(uid,start,res){
     try{
-        let questions = await question_service.getQuestionByUser(uid,date);
+        let questions = await question_service.getQuestionByUser(uid,start);
         appendRes(questions,res); 
     }catch(e){
         appendError(e,res)
     }
 }
 
-async function getQuestionByUserFav(uid,date,res){
+async function getQuestionsByUserFav(uid,start,res){
     try{
-        let questions = await question_service.getQuestionByUserFav(uid,date);
+        let questions = await question_service.getQuestionByUserFav(uid,start);
         appendRes(questions,res); 
     }catch(e){
         appendError(e,res)
     }   
 }
 
-async function getSearchQuestion(searchKey,date,res){
+async function getSearchQuestions(searchKey,start,res){
     try{
         res.writeHead(200, 'Content-Type', 'application/json');
-        let questions = await question_service.getSearchQuestion(searchKey,date);
+        let questions = await question_service.getSearchQuestion(searchKey,start);
         appendRes(questions,res);
     }catch(e){
         appendError(e,res)

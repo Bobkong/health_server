@@ -29,8 +29,9 @@ app.use(session({
 
 app.use('/',  require('./routes/index'));
 app.use('/users',  require('./routes/users'));
-app.use('/register', require('./routes/register'));
-app.use('/api/question', require('./routes/question'));
+app.use('/api/questions', require('./routes/question'));
+app.use('/api/answers', require('./routes/answer'));
+app.use('/api/comments', require('./routes/comments'));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

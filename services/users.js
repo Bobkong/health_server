@@ -27,7 +27,7 @@ let users = {
             };
         }
         var sig_ = new sig.Sig(config);
-        var tls_sig = sig_.genSig(user.id);
+        var tls_sig = sig_.genSig(user.name);
 
         let result = await client.query('INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?,?)',
              [user.id, user.name, user.gender, user.iconUrl,user.height,user.weight,user.age,tls_sig]);
@@ -41,6 +41,21 @@ let users = {
             return {
                 success: true
             };
+        }
+    },
+    async getSig(name){
+        if(!name){
+            return{
+                success: false,
+                err: 'name is null'
+            };
+        }
+        let result = await client.query('SELECT sig FROM user WHERE name = ?',[name]);
+        if(result.err){
+            console.error(result.err);
+            return null;
+        }else{
+            return result.length == 0 ? null : result[0];
         }
     },
     async addQQUserIfNeeded(userInfo){

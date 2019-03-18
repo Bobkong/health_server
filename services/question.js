@@ -2,10 +2,20 @@ let client = require('../storage/mysql_client');
 
 
 
-let questions = {
-    async getQuestionRecent(date){
-        let result = await client.query('SELECT * FROM question WHERE date < ? ORDER BY date DESC', [date]);
-        console.log(result);
+let question = {
+    async getQustionById(questionId){
+        let result = await client.query('SELECT * FROM question WHERE id = ?', [questionId]);
+        //console.log(result);
+        if(result.err){
+            console.error(result.err);
+            return null;
+        }else{
+            return result.length == 0 ? null : result[0];
+        }
+    },
+    async getQuestionRecent(start){
+        let result = await client.query('SELECT * FROM question ORDER BY date DESC LIMIT ' + start + ', 10');
+        //console.log(result);
         if(result.err){
             console.error(result.err);
             return null;
@@ -13,9 +23,9 @@ let questions = {
             return result.length == 0 ? null : result;
         }
     },
-    async getQuestionHot(favoriteCount){
-        let result = await client.query('SELECT * FROM question WHERE favoriteCount < ? ORDER BY favoriteCount DESC', [favoriteCount]);
-        console.log(result);
+    async getQuestionHot(start){
+        let result = await client.query('SELECT * FROM question ORDER BY favoriteCount DESC LIMIT ' + start + ', 10');
+        //console.log(result);
         if(result.err){
             console.error(result.err);
             return null;
@@ -53,7 +63,7 @@ let questions = {
         }
         let result = await client.query('INSERT INTO question(title,description,authorId,authorName,authorIcon,favoriteCount,answerCount) VALUES (?, ?, ?, ?, ?, ?, ?)',
              [question.title, question.description, question.authorId, question.authorName,question.authorIcon,question.favoriteCount,question.answerCount]);
-        console.log("addUser: user=%o, result=%o", question, result);
+        console.log("addQuestion: question=%o, result=%o", question, result);
         if(result.err){
             return {
                 success: false,
@@ -65,14 +75,14 @@ let questions = {
             };
         }
     },
-    async getQusetionByUser(uid,date){
-        if(!uid || !date){
+    async getQusetionByUser(uid,start){
+        if(!uid || !start){
             return{
                 success: false,
-                err: 'uid or date is null'
+                err: 'uid or start is null'
             };
         }
-        let result = await client.query('SELECT * FROM question WHERE authorId = ? AND date < ? ORDER BY date DESC', [uid,date]);
+        let result = await client.query('SELECT * FROM question WHERE authorId = ? ORDER BY date DESC LIMIT ' + start + ', 10', [uid]);
         console.log("getQuestionByUser: result=%o",result);
         if(result.err){
             console.log(result.err);
@@ -81,11 +91,11 @@ let questions = {
             return result.length == 0 ? null : result;
         }
     },
-    async getQuestionByUserFav(uid,date){
-        if(!uid || !date){
+    async getQuestionByUserFav(uid,start){
+        if(!uid || !start){
             return{
                 success: false,
-                err: 'uid or date is null'
+                err: 'uid or start is null'
             };
         }
         let result = await client.query('SELECT questionId FROM favorite WHERE uid = ?',[uid]);
@@ -94,7 +104,7 @@ let questions = {
             console.log(result.err);
             return null;
         }
-        let quesitonList = await client.query('SELECT * FROM question WHERE id in ? AND date < ? ORDER BY date DESC',[result,date]);
+        let quesitonList = await client.query('SELECT * FROM question WHERE id in ? ORDER BY date DESC LIMIT ' + start + ', 10',[result]);
         console.log('getQuestions: questionList=%o',quesitonList);
         if(quesitonList.err){
             console.log(quesitonList.err);
@@ -124,14 +134,14 @@ let questions = {
             }
         }
     },
-    async getSearchQuestion(searchKey,date){
-        if(!searchKey || !date){
+    async getSearchQuestion(searchKey,start){
+        if(!searchKey || !start){
             return{
                 success: false,
-                err: 'searchKey or date is null!'
+                err: 'searchKey or start is null!'
             };
         }
-        let result = await client.query('SELECT * FROM question WHERE title LIKE \'%' + searchKey + '%\' AND date < ? ORDER BY date DESC',[date]);
+        let result = await client.query('SELECT * FROM question WHERE title LIKE \'%' + searchKey + '%\' ORDER BY date DESC LIMIT ' + start + ', 10');
         console.log('getSearchQuestion: result=%o',result);
         if(result.err){
             console.log(result.err);
@@ -148,12 +158,19 @@ let questions = {
             };
         }
         let result = await client.query('INSERT INTO favorite(uid, questionId) VALUES(?,?)',[uid,questionId]);
-        console.log('addFavQuestion: result=%o',result);
+        let addFavCount = await client.query('UPDATE question SET favoriteCount = favoriteCount + 1 WHERE id = ? ',[questionId]);
+        console.log('addFavQuestion: result=%o,addFavCount=%o',result,addFavCount);
         if(result.err){
             console.log(result.err);
             return{
                 success: false,
                 err: result.err
+            }
+        }else if(addFavCount){
+            console.log(addFavCount.err);
+            return{
+                success: false,
+                err: addFavCount.err
             }
         }else{
             return{
@@ -169,14 +186,21 @@ let questions = {
             };
         }
         let result = await client.query('DELETE FROM favorite WHERE uid = ? AND questionId = ?',[uid,questionId]);
+        let subFavCount = await client.query('UPDATE question SET favoriteCount = favoriteCount - 1 WHERE id = ? ',[questionId]);
+        console.log('unFavQuestion: result=%o,subFavCount=%o',result,subFavCount);
         if(result.err){
             console.log(result.err);
             return{
                 success: false,
                 err: result.err
-            };
-        }
-        else{
+            }
+        }else if(subFavCount){
+            console.log(subFavCount.err);
+            return{
+                success: false,
+                err: subFavCount.err
+            }
+        }else{
             return{
                 success: true
             }
@@ -184,4 +208,4 @@ let questions = {
     }
 };
 
-module.exports = questions;
+module.exports = question;
