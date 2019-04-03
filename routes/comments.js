@@ -8,32 +8,43 @@ router.get('/',function(req,res,next){
 });
 
 router.post('/',function(req,res,next){
-    var authorId = req.body.uid;
-    let user = user_service.getUser(authorId);
-    var answerId = req.body.answer_id;
+    postComment(req.body.comment,req.body.answer_id,req.body.uid,res);
+});
+
+async function postComment(content,answer_id,uid,res){
+    let user =await user_service.getUser(uid);
+    if(user == null){
+        res.end(JSON.stringify({
+            success: false,
+            err: 'author is null'
+         }));
+         return;
+    }
+    console.log(user);
     let comment = {
-        content: req.body.comment,
-        answerId: answerId,
-        authorId: anuthorId,
-        anthorName: user.name,
-        authorIcon: user.IconUrl,
+        content: content,
+        answerId: answer_id,
+        authorId: uid,
+        authorName: user.name,
+        authorIcon: user.iconUrl,
     };
-    
+    console.log(comment);
     try{
-        comments_service.addComents(comment);
+        comments_service.addComments(comment);
         console.log('add comment %o success: ',  comment);
         res.end(JSON.stringify({
-            success: true
+            success: true,
+            data:'null'
         }));
     }catch(err){
         appendError(e,res)
     }
-});
+};
 
 async function getComments(answerId,start,res) {
     try{
-        let comments = await comment_service.getQuestionRecent(answerId,start);   
-        console.log("start: "+ start); 
+        let comments = await comments_service.getComments(answerId,start);   
+        console.log(comments); 
         appendRes(comments,res);    
     }catch(e){
         appendError(e,res)
@@ -42,10 +53,10 @@ async function getComments(answerId,start,res) {
 
 function appendRes(data,res){
     try{
-        res.writeHeader(data ? 200 : 404, {'Content-Type': 'application/json'});
+        res.writeHeader(200, {'Content-Type': 'application/json'});
         res.end(JSON.stringify({
         success: data != null,
-        data: data
+        data: data==null?[]:data
         }));
     }catch(e){
         appendError(e,res)

@@ -14,7 +14,7 @@ let question = {
         }
     },
     async getQuestionRecent(start){
-        let result = await client.query('SELECT * FROM question ORDER BY date DESC LIMIT ' + start + ', 10');
+        let result = await client.query('SELECT * FROM question ORDER BY date DESC LIMIT ?, 10',start*10);
         //console.log(result);
         if(result.err){
             console.error(result.err);
@@ -24,7 +24,7 @@ let question = {
         }
     },
     async getQuestionHot(start){
-        let result = await client.query('SELECT * FROM question ORDER BY favoriteCount DESC LIMIT ' + start + ', 10');
+        let result = await client.query('SELECT * FROM question ORDER BY favoriteCount DESC,answerCount DESC LIMIT ?, 10',start*10);
         //console.log(result);
         if(result.err){
             console.error(result.err);
@@ -75,14 +75,14 @@ let question = {
             };
         }
     },
-    async getQusetionByUser(uid,start){
+    async getQuestionByUser(uid,start){
         if(!uid || !start){
             return{
                 success: false,
                 err: 'uid or start is null'
             };
         }
-        let result = await client.query('SELECT * FROM question WHERE authorId = ? ORDER BY date DESC LIMIT ' + start + ', 10', [uid]);
+        let result = await client.query('SELECT * FROM question WHERE authorId = ? ORDER BY date DESC LIMIT ?, 10', [uid,start*10]);
         console.log("getQuestionByUser: result=%o",result);
         if(result.err){
             console.log(result.err);
@@ -98,14 +98,7 @@ let question = {
                 err: 'uid or start is null'
             };
         }
-        let result = await client.query('SELECT questionId FROM favorite WHERE uid = ?',[uid]);
-        console.log('getQuestionId: result=%o',result);
-        if(result.err){
-            console.log(result.err);
-            return null;
-        }
-        let quesitonList = await client.query('SELECT * FROM question WHERE id in ? ORDER BY date DESC LIMIT ' + start + ', 10',[result]);
-        console.log('getQuestions: questionList=%o',quesitonList);
+        let quesitonList = await client.query('SELECT * FROM question WHERE id in (SELECT questionId FROM favorite WHERE uid = ?) ORDER BY date DESC LIMIT ?,10',[uid,start*10]);
         if(quesitonList.err){
             console.log(quesitonList.err);
             return null;
@@ -141,7 +134,7 @@ let question = {
                 err: 'searchKey or start is null!'
             };
         }
-        let result = await client.query('SELECT * FROM question WHERE title LIKE \'%' + searchKey + '%\' ORDER BY date DESC LIMIT ' + start + ', 10');
+        let result = await client.query('SELECT * FROM question WHERE title LIKE \'%' + searchKey + '%\' ORDER BY date DESC LIMIT ?, 10',[start*10]);
         console.log('getSearchQuestion: result=%o',result);
         if(result.err){
             console.log(result.err);

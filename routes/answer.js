@@ -25,28 +25,17 @@ router.get('/user_like',function(req,res,next){
 });
 
 router.post('/',function(req,res,next){
-    res.writeHead(200, 'Content-Type', 'application/json');
-    var authorId = req.body.uId;
-    var questionId = req.body.question_id;
-    let answer = generateAnswer(authorId,questionId);
-    try{
-        answer_service.addAnswer(answer);
-        console.log('auth for %o success: ',  question);
-        res.end(JSON.stringify({
-            success: true
-        }));
-    }catch(err){
-        appendError(e,res)
-    }
+   postAnswer(req.body.answer,req.body.question_id,req.body.uid,res);
 });
 
-router.delete('/',function(req,res,next){
+router.delete('/:id',function(req,res,next){
     try{
         var answerId = req.params.id;
         res.writeHead(200, 'Content-Type', 'application/json');
         answer_service.deleteAnswer(answerId);
         res.end(JSON.stringify({
-            success: true
+            success: true,
+            data:"null"
         }));
     }catch(e){
         appendError(e,res)
@@ -58,19 +47,21 @@ router.post('/like',function(req,res,next){
         res.writeHead(200, 'Content-Type', 'application/json');
         answer_service.likeAnswer(req.body.uid,req.body.answer_id);
         res.end(JSON.stringify({
-            success: true
+            success: true,
+            data:"null"
         }));
     }catch(e){
         appendError(e);
     }
 });
 
-router.post('/un_like',function(req,res,next){
+router.post('/unlike',function(req,res,next){
     try{
         res.writeHead(200, 'Content-Type', 'application/json');
         answer_service.unLikeAnswer(req.body.uid,req.body.answer_id);
         res.end(JSON.stringify({
-            success: true
+            success: true,
+            data:"null"
         }));
     }catch(e){
         appendError(e);
@@ -123,8 +114,48 @@ async function getAnswerByUserLike(uid,start,res) {
     }
 };
 
-function generateAnswer(authorId,questionId){
-    let user = user_service.getUser(authorId);
+async function postAnswer(content,question_id,uid,res){
+    res.writeHead(200, 'Content-Type', 'application/json');
+    let user =await user_service.getUser(uid);
+    if(user == null){
+        res.end(JSON.stringify({
+            success: false,
+            err: 'author is null'
+         }));
+         return;
+    }
+    let question =await question_service.getQustionById(question_id);
+    if(question == null){
+        res.end(JSON.stringify({
+            success: false,
+            err: 'question is null'
+         }));
+         return;
+    }
+    let answer = {
+        content: content,
+        questionId: question_id,
+        questionTitle: question.title,
+        authorId: uid,
+        authorName: user.name,
+        authorIcon: user.iconUrl,
+        likeCount: 0,
+        commentCount: 0
+    };
+    try{
+        answer_service.addAnswer(answer);
+        res.end(JSON.stringify({
+            success: true,
+            data:'null'
+        }));
+    }catch(err){
+        appendError(e,res)
+    }
+}
+
+/*
+async function generateAnswer(authorId,questionId){
+    let user =await user_service.getUser(authorId);
     if(user == null){
         res.end(JSON.stringify({
             success: false,
@@ -150,14 +181,14 @@ function generateAnswer(authorId,questionId){
         likeCount: 0,
         commentCount: 0
     };
-}
+} */
 
 function appendRes(data,res){
     try{
-        res.writeHeader(data ? 200 : 404, {'Content-Type': 'application/json'});
+        res.writeHeader(200, {'Content-Type': 'application/json'});
         res.end(JSON.stringify({
         success: data != null,
-        data: data
+        data: data==null?[]:data
         }));
     }catch(e){
         appendError(e,res)

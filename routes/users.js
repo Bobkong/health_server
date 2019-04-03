@@ -1,13 +1,19 @@
 var express = require('express');
 var router = express.Router();
 var users = require('../services/users');
+var sig = require('tls-sig-api');
 
-router.get('/:user_id', function(req, res, next){
-  getUser(req.params.user_id, res);
-});
+var config = {
+  "sdk_appid": 1400188488,
+  "expire_after": 180 * 24 * 3600,
+  "private_key": "private_key.pem",
+  "public_key": "public_key.pem"
+}
 
-router.get('/sig',function(req,res,next){
+router.get('/sig',async function(req,res,next){
+  // res.render('index', { title: 'SIG!' });
   getSig(req.query.user_name,res);
+  console.log("username:" + req.query.user_name);
 });
 
 router.post('/', async function(req, res, next){
@@ -22,7 +28,8 @@ router.post('/', async function(req, res, next){
     iconUrl: req.body.iconUrl,
     height: req.body.height,
     weight: req.body.weight,
-    age: req.body.age
+    age: req.body.age,
+    sig: req.body.sig
   };
   try{
     await users.addQQUserIfNeeded(user);
@@ -72,11 +79,13 @@ async function getUser(userId, res) {
 
 async function getSig(name,res){
   try{
-    let sig = await users.getSig(name);        
-    res.writeHeader(sig ? 200 : 404, {'Content-Type': 'application/json'});
+    var sig_ = new sig.Sig(config);
+    var tls_sig = sig_.genSig(name);
+    console.log(tls_sig);       
+    res.writeHeader(tls_sig ? 200 : 404, {'Content-Type': 'application/json'});
     res.end(JSON.stringify({
-    success: sig != null,
-    data: sig
+    success: tls_sig != null,
+    data: tls_sig
     }));
   }catch(e){
       console.error(e);

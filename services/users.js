@@ -1,13 +1,4 @@
 let client = require('../storage/mysql_client');
-var sig = require('tls-sig-api');
-
-var config = {
-    "sdk_appid": 1400188488,
-    "expire_after": 180 * 24 * 3600,
-    "private_key": "private_key.pem",
-    "public_key": "public_key.pem"
-}
-
 
 let users = {
     async getUser(userId){
@@ -26,11 +17,8 @@ let users = {
                 err: 'user is null'
             };
         }
-        var sig_ = new sig.Sig(config);
-        var tls_sig = sig_.genSig(user.name);
-
         let result = await client.query('INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?,?)',
-             [user.id, user.name, user.gender, user.iconUrl,user.height,user.weight,user.age,tls_sig]);
+             [user.id, user.name, user.gender, user.iconUrl,user.height,user.weight,user.age,user.sig]);
         console.log("addUser: user=%o, result=%o", user, result);
         if(result.err){
             return {
@@ -41,21 +29,6 @@ let users = {
             return {
                 success: true
             };
-        }
-    },
-    async getSig(name){
-        if(!name){
-            return{
-                success: false,
-                err: 'name is null'
-            };
-        }
-        let result = await client.query('SELECT sig FROM user WHERE name = ?',[name]);
-        if(result.err){
-            console.error(result.err);
-            return null;
-        }else{
-            return result.length == 0 ? null : result[0];
         }
     },
     async addQQUserIfNeeded(userInfo){
@@ -79,7 +52,8 @@ function qqUserInfoToUser(userInfo){
         iconUrl: userInfo.iconUrl,
         height: userInfo.height,
         weight: userInfo.weight,
-        age: userInfo.age
+        age: userInfo.age,
+        sig: userInfo.sig
     }       
 }
 

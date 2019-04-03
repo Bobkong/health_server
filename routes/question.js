@@ -24,34 +24,7 @@ router.get('/user_favorite', function(req, res, next){
 });
 
 router.post('/',function(req,res,next){
-    res.writeHead(200, 'Content-Type', 'application/json');
-    var authorId = req.body.author_id;
-    let user = user_service.getUser(authorId);
-    if(user == null){
-        res.end(JSON.stringify({
-            success: false,
-            err: 'author is null'
-         }));
-         return;
-    }
-    let question = {
-        title: req.body.title,
-        description: req.body.description,
-        authorId: authorId,
-        authorName: user.name,
-        authorIcon: user.iconUrl,
-        favoriteCount: 0,
-        answerCount: 0
-    };
-    try{
-        question_service.addQuestion(question);
-        console.log('add question %o success: ',  question);
-        res.end(JSON.stringify({
-            success: true
-        }));
-    }catch(err){
-        appendError(e,res)
-    }
+    postQuestion(req.body.title,req.body.description,req.body.author_id,res);
 });
 
 router.delete('/:id',function(req,res,next){
@@ -60,7 +33,8 @@ router.delete('/:id',function(req,res,next){
         res.writeHead(200, 'Content-Type', 'application/json');
         question_service.deleteQuestion(questionId);
         res.end(JSON.stringify({
-            success: true
+            success: true,
+            data:"null"
         }));
     }catch(e){
         appendError(e,res)
@@ -76,7 +50,8 @@ router.post('/favorite',function(req,res,next){
         res.writeHead(200, 'Content-Type', 'application/json');
         question_service.FavQuestion(req.body.uid,req.body.question_id);
         res.end(JSON.stringify({
-            success: true
+            success: true,
+            data:"null"
         }));
     }catch(e){
         appendError(e);
@@ -88,12 +63,44 @@ router.post('/unfavorite',function(req,res,next){
         res.writeHead(200, 'Content-Type', 'application/json');
         question_service.unFavQuestion(req.body.uid,req.body.question_id);
         res.end(JSON.stringify({
-            success: true
+            success: true,
+            data:"null"
         }));
     }catch(e){
         appendError(e);
     }
 })
+
+async function postQuestion(title,description,author_id,res){
+    res.writeHead(200, 'Content-Type', 'application/json');
+    let user =await user_service.getUser(author_id);
+    if(user == null){
+        res.end(JSON.stringify({
+            success: false,
+            err: 'author is null'
+         }));
+         return;
+    }
+    let question = {
+        title: title,
+        description: description,
+        authorId: author_id,
+        authorName: user.name,
+        authorIcon: user.iconUrl,
+        favoriteCount: 0,
+        answerCount: 0
+    };
+    try{
+        question_service.addQuestion(question);
+        console.log('add question %o success: ',  question);
+        res.end(JSON.stringify({
+            success: true,
+            data:'null'
+        }));
+    }catch(err){
+        appendError(e,res)
+    }
+}
 
 async function getRecentQuestions(start, res) {
     try{
@@ -152,9 +159,16 @@ async function getQuestionsByUserFav(uid,start,res){
 
 async function getSearchQuestions(searchKey,start,res){
     try{
-        res.writeHead(200, 'Content-Type', 'application/json');
         let questions = await question_service.getSearchQuestion(searchKey,start);
-        appendRes(questions,res);
+        try{
+            res.writeHead(200, 'Content-Type', 'application/json');//搜索结果为空返回200
+            res.end(JSON.stringify({
+            success: questions != null,
+            data: questions==null?[]:questions
+            }));
+        }catch(e){
+            appendError(e,res)
+        }
     }catch(e){
         appendError(e,res)
     }
@@ -162,10 +176,10 @@ async function getSearchQuestions(searchKey,start,res){
 
 function appendRes(data,res){
     try{
-        res.writeHeader(data ? 200 : 404, {'Content-Type': 'application/json'});
+        res.writeHeader(200, {'Content-Type': 'application/json'});
         res.end(JSON.stringify({
         success: data != null,
-        data: data
+        data: data==null?[]:data
         }));
     }catch(e){
         appendError(e,res)

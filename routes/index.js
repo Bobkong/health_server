@@ -12,9 +12,9 @@ var router = express.Router();
 //   commentCount: 0
 // });
 
-// /* GET home page. */
-// router.get('/', function(req, res, next) {
-//   res.render('index', { title: 'Health Helper!' });
-// });
+ /* GET home page. */
+ router.get('/', function(req, res, next) {
+   res.render('index', { title: 'Health Helper!' });
+ });
 
 module.exports = router;
