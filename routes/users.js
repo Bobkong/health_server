@@ -13,7 +13,11 @@ var config = {
 router.get('/sig',async function(req,res,next){
   // res.render('index', { title: 'SIG!' });
   getSig(req.query.user_name,res);
-  console.log("username:" + req.query.user_name);
+  //console.log("username:" + req.query.user_name);
+});
+
+router.get('/verify',async function(req,res,next){
+  getType(req.query.user_id,res);
 });
 
 router.post('/', async function(req, res, next){
@@ -59,6 +63,24 @@ function checksParmas(req){
     }
     return true;
   }
+
+  async function getType(userId, res) {
+    try{
+        let user = await users.getUser(userId);        
+        res.writeHeader(user ? 200 : 404, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({
+        success: user != null,
+        data: user.userType
+        }));
+    }catch(e){
+        console.error(e);
+        res.end(JSON.stringify({
+            success: false,
+            err: e
+        }));
+    }
+};
+
 
 async function getUser(userId, res) {
     try{

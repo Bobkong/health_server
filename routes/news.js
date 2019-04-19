@@ -6,6 +6,19 @@ router.get('/',function(req,res,next){
     getNews(req.query.tag,req.query.start,res);
 });
 
+router.post('/favorite',function(req,res,next){
+    try{
+        res.writeHead(200, 'Content-Type', 'application/json');
+        news_service.FavNews(req.body.uid,req.body.news_id);
+        res.end(JSON.stringify({
+            success: true,
+            data:"null"
+        }));
+    }catch(e){
+        appendError(e);
+    }
+})
+
 async function getNews(tag,start,res){
     try{
         let news = await news_service.getNews(tag,start);    

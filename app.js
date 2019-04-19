@@ -51,4 +51,7 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
+var CACHETIME = 60 * 1000 * 60 * 24 * 30;
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: CACHETIME }));
+app.use(express.static('public'));
 module.exports = app;

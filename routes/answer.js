@@ -139,6 +139,7 @@ async function postAnswer(content,question_id,uid,res){
         authorId: uid,
         authorName: user.name,
         authorIcon: user.iconUrl,
+        authorType: user.userType,
         likeCount: 0,
         commentCount: 0
     };

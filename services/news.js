@@ -15,6 +15,26 @@ let news = {
         }else{
             return result.length == 0 ? null : result;
         }
+    },
+    async FavNews(uid,newsId){
+        if(!uid || !newsId){
+            return{
+                success: false,
+                err: 'uid or newsId is null'
+            };
+        }
+        let result = await client.query('INSERT INTO favorite(uid, sourceId,sourceType) VALUES(?,?,?)',[uid,newsId,1]);
+        if(result.err){
+            console.log(result.err);
+            return{
+                success: false,
+                err: result.err
+            }
+        }else{
+            return{
+                success: true
+            }
+        }
     }
 };
 

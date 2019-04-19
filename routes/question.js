@@ -23,8 +23,20 @@ router.get('/user_favorite', function(req, res, next){
     getQuestionsByUserFav(req.query.user_id,req.query.start,res);
 });
 
-router.post('/',function(req,res,next){
-    postQuestion(req.body.title,req.body.description,req.body.author_id,res);
+//将图片放到服务器
+var multer = require('multer')
+var storage = multer.diskStorage({
+    destination: 'public/images/',
+    filename: function (req, file, cb) {
+        var fileFormat = (file.originalname).split(".");
+        cb(null, Date.now() + "." + fileFormat[fileFormat.length - 1]);
+     }
+}); 
+var upload = multer({
+    storage: storage
+});
+router.post('/',upload.single('file'),function(req,res,next){
+    postQuestion(req.body.title,req.body.description,req.body.author_id,req.body.hotkey,req.body.hide_name,req.file,res);
 });
 
 router.delete('/:id',function(req,res,next){
@@ -71,36 +83,7 @@ router.post('/unfavorite',function(req,res,next){
     }
 })
 
-async function postQuestion(title,description,author_id,res){
-    res.writeHead(200, 'Content-Type', 'application/json');
-    let user =await user_service.getUser(author_id);
-    if(user == null){
-        res.end(JSON.stringify({
-            success: false,
-            err: 'author is null'
-         }));
-         return;
-    }
-    let question = {
-        title: title,
-        description: description,
-        authorId: author_id,
-        authorName: user.name,
-        authorIcon: user.iconUrl,
-        favoriteCount: 0,
-        answerCount: 0
-    };
-    try{
-        question_service.addQuestion(question);
-        console.log('add question %o success: ',  question);
-        res.end(JSON.stringify({
-            success: true,
-            data:'null'
-        }));
-    }catch(err){
-        appendError(e,res)
-    }
-}
+
 
 async function getRecentQuestions(start, res) {
     try{
@@ -121,24 +104,6 @@ async function getHotQuestions(start,res){
     }
 }
     
-
-// async function getNewAnsweredQuestions(date,res){
-//     try{
-//         let questions = await question_service.getQuestionNewAnswered(date);
-//         res.writeHeader(questions ? 200 : 404, {'Content-Type': 'application/json'});
-//         res.end(JSON.stringify({
-//         success: questions != null,
-//         data: questions
-//         }));
-//     }catch(e){
-//         console.error(e);
-//         res.end(JSON.stringify({
-//             success: false,
-//             err: e
-//         }));
-//     }
-// }
-
 async function getQuestionsByUser(uid,start,res){
     try{
         let questions = await question_service.getQuestionByUser(uid,start);
@@ -192,6 +157,40 @@ function appendError(err,res){
         success: false,
         err: err
     }));
+}
+
+async function postQuestion(title,description,author_id,hotkey,hide_name,file,res){
+    res.writeHead(200, 'Content-Type', 'application/json');
+    let user =await user_service.getUser(author_id);
+    if(user == null){
+        res.end(JSON.stringify({
+            success: false,
+            err: 'author is null'
+         }));
+         return;
+    }
+    let question = {
+        title: title,
+        description: description,
+        authorId: author_id,
+        authorName: hide_name=="1"?"匿名用户":user.name,
+        authorIcon:  hide_name=="1"?"http://129.204.214.63:3000/images/"+"hide.png":user.iconUrl,
+        favoriteCount: 0,
+        answerCount: 0,
+        keys:hotkey,
+        hideName:hide_name,
+        imgUrl:file==null?null:"http://129.204.214.63:3000/images/"+file.filename
+    };
+    try{
+        question_service.addQuestion(question);
+        console.log('add question %o success: ',  question);
+        res.end(JSON.stringify({
+            success: true,
+            data:'null'
+        }));
+    }catch(err){
+        appendError(e,res)
+    }
 }
 
 module.exports = router;

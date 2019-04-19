@@ -33,27 +33,7 @@ let question = {
             return result.length == 0 ? null : result;
         }
     },
-    // async getQuestionNewAnswered(date){
-    //     let result = await client.query('SELECT questionId FROM answer WHERE date < ? ORDER BY date DESC', [date]);
-    //     //去重
-    //     result.prototype.removeDup3 = function(){
-    //         var result = [];
-    //         var obj = {};
-    //         for(var i = 0; i < this.length; i++){
-    //             if(!obj[this[i]]){
-    //                 result.push(this[i]);
-    //                 obj[this[i]] = 1;
-    //             }
-    //         }
-    //         return result;
-    //     }
-    //     if(result.err){
-    //         console.error(result.err);
-    //         return null;
-    //     }else{
-    //         return result.length == 0 ? null : result;
-    //     }
-    // },
+   
     async addQuestion(question){
         if(!question){
             return {
@@ -61,8 +41,8 @@ let question = {
                 err: 'question is null'
             };
         }
-        let result = await client.query('INSERT INTO question(title,description,authorId,authorName,authorIcon,favoriteCount,answerCount) VALUES (?, ?, ?, ?, ?, ?, ?)',
-             [question.title, question.description, question.authorId, question.authorName,question.authorIcon,question.favoriteCount,question.answerCount]);
+        let result = await client.query('INSERT INTO question(title,description,authorId,authorName,authorIcon,favoriteCount,answerCount,hotkeys,hideName,imgUrl) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+             [question.title, question.description, question.authorId, question.authorName,question.authorIcon,question.favoriteCount,question.answerCount,question.keys,question.hideName,question.imgUrl]);
         console.log("addQuestion: question=%o, result=%o", question, result);
         if(result.err){
             return {
@@ -150,7 +130,7 @@ let question = {
                 err: 'uid or questionId is null'
             };
         }
-        let result = await client.query('INSERT INTO favorite(uid, questionId) VALUES(?,?)',[uid,questionId]);
+        let result = await client.query('INSERT INTO favorite(uid, sourceId,sourceType) VALUES(?,?,?)',[uid,questionId,0]);
         let addFavCount = await client.query('UPDATE question SET favoriteCount = favoriteCount + 1 WHERE id = ? ',[questionId]);
         console.log('addFavQuestion: result=%o,addFavCount=%o',result,addFavCount);
         if(result.err){

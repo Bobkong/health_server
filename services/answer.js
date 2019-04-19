@@ -38,8 +38,8 @@ let answer = {
                 err: 'answer is null'
             };
         }
-        let result = await client.query('INSERT INTO answer(content,questionId,questionTitle,authorId,authorName,authorIcon,likeCount,commentCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-             [answer.content, answer.questionId, answer.questionTitle,answer.authorId, answer.authorName,answer.authorIcon,answer.likeCount,answer.commentCount]);
+        let result = await client.query('INSERT INTO answer(content,questionId,questionTitle,authorId,authorName,authorIcon,authorType,likeCount,commentCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+             [answer.content, answer.questionId, answer.questionTitle,answer.authorId, answer.authorName,answer.authorIcon,answer.authorType,answer.likeCount,answer.commentCount]);
         let addAnswewrCount=await client.query('UPDATE question SET answerCount = answerCount + 1 WHERE id = ? ',[answer.questionId]);
         console.log(result+" "+answer);
         if(result.err){
